@@ -16,6 +16,7 @@ namespace Flights
 
             builder.Services.AddControllers();
             builder.Services.AddControllersWithViews();
+            //коменитую
 
             builder.Services.AddDbContext<FlightsContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
