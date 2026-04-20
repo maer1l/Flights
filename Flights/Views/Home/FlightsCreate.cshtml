@@ -1,0 +1,33 @@
+﻿@{
+    ViewData["Title"] = "Create flight";
+}
+
+<input type="text" placeholder="flight number..." id="flightNumber" /><br />
+<input type="text" placeholder="direction..." id="direction" /><br />
+<input type="text" placeholder="gate number..." id="gateNumber" /><br />
+<input type="text" placeholder="people count..." id="peopleCount"/><br />
+
+<input type="button" id="create" value="Create"/>
+
+<script>
+    $("#create").click(function(e) {
+        let flightNumber = $("#flightNumber").val() == "" ? "temp numb" : $("#flightNumber").val();
+        let direction = $("#direction").val() == "" ? "Temp-Temp" : $("#direction").val();
+        let gateNumber = $("#gateNumber").val() == "" ? "temp gate" : $("#gateNumber").val();
+        let peopleCount = isNaN(parseInt($("#peopleCount").val())) ? 1 : parseInt($("#peopleCount").val());
+
+        let jsonData = JSON.stringify({'flightNumber': flightNumber, 'direction': direction, 'gateNumber': gateNumber, 'peopleCount': peopleCount});
+        $.ajax({
+            url: '/api/Flights/create',
+            method: "post",
+            dataType: 'json',
+            contentType: 'application/json',
+            data: jsonData,
+            cache: false,
+            processData: false,
+            success: function (data) {
+                window.location.replace('/Home/Flights');
+            }
+        })
+    })
+</script>

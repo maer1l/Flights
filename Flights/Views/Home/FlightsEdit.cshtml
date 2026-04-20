@@ -1,0 +1,43 @@
+﻿@model Flights.Models.Flight
+
+@{
+    ViewData["Title"] = "Edit flight";
+}
+
+<input type="hidden" id="flightId" value="@Model.FlightId" />
+<br />
+<input type="text" placeholder="flight number..." id="flightNumber" value="@Model.FlightNumber"/>
+<br />
+<input type="text" placeholder="direction..." id="direction" value="@Model.Direction" />
+<br />
+<input type="text" placeholder="gate number..." id="gateNumber" value="@Model.GateNumber" />
+<br />
+<input type="text" placeholder="people count..." id="peopleCount" value="@Model.PeopleCount" />
+<br />
+
+<input type="button" id="save" value="Save" />
+<button>Back</button>
+
+<script>
+    $("#save").click(function(e){
+        let flightNumber = $("#flightNumber").val() == "" ? "@Model.FlightNumber" : $("#flightNumber").val();
+        let direction = $("#direction").val() == "" ? "@Model.Direction" : $("#direction").val();
+        let gateNumber = $("#gateNumber").val() == "" ? "@Model.GateNumber ": $("#gateNumber").val();
+        let peopleCount = isNaN(parseInt($("#peopleCount").val())) ? "@Model.PeopleCount" : parseInt($("#peopleCount").val());
+
+        let jsonData = JSON.stringify({'flightId': $("#flightId").val(), 'flightNumber': flightNumber, 'direction': direction, 'gateNumber': gateNumber, 'peopleCount': peopleCount});
+
+        $.ajax({
+            url: "/api/Flights/" + $("#flightId").val(),
+            method: "put",
+            dataType: 'json',
+            contentType: 'application/json',
+            data: jsonData,
+            cache: false,
+            processData: false,
+            success: function (data) {
+                window.location.replace('/Home/Flights');
+            }
+        })
+    });
+</script>
