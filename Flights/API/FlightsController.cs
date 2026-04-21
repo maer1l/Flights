@@ -2,6 +2,7 @@
 using Flights.Data;
 using Flights.Models;
 using Flights.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -24,22 +26,39 @@ namespace Flights.API
         private readonly FlightsContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public FlightsController(FlightsContext context, UserManager<ApplicationUser> userManager, IConfiguration configuration)
+        public FlightsController(FlightsContext context, UserManager<ApplicationUser> userManager, IConfiguration configuration, RoleManager<IdentityRole> roleManager)
         {
             _context = context;
             _userManager = userManager;
             _configuration = configuration;
+            _roleManager = roleManager;
         }
 
         [Route("Register")]
         [HttpPost]
         public async Task<ActionResult> Register(IdentityViewModel model)
         {
+            //строка в которой решается какой юзер регистрируется
+            string _role = "Editor";//Admin, User, Editor
+
+            if (_role == "Admin")
+                if (!await _roleManager.RoleExistsAsync("Editor"))
+                    await _roleManager.CreateAsync(new IdentityRole("Editor"));
+
+            if (!await _roleManager.RoleExistsAsync(_role))
+                await _roleManager.CreateAsync(new IdentityRole(_role));
+
             var user = new ApplicationUser() { Email = model.Username, UserName = model.Username };
             var result = await _userManager.CreateAsync(user, model.Password); // создали пользователя
             if (result.Succeeded) // если все успешно
             {
+
+                await _userManager.AddToRoleAsync(user, _role);
+                if(_role == "Admin")
+                    await _userManager.AddToRoleAsync(user, "Editor");
+
                 var guid = Guid.NewGuid().ToString();
                 // https://datatracker.ietf.org/doc/html/rfc7519#section-4
                 var claims = new List<Claim> {
@@ -130,6 +149,7 @@ namespace Flights.API
 
         // GET: api/Flights
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<Flight>>> GetFlights()
         {
             return await _context.Flights.ToListAsync();
@@ -137,6 +157,7 @@ namespace Flights.API
 
         // GET: api/Flights/5
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult<Flight>> GetFlight(int id)
         {
             var flight = await _context.Flights.FindAsync(id);
@@ -152,6 +173,7 @@ namespace Flights.API
         // PUT: api/Flights/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
+        [Authorize(Roles = "Editor")]
         public async Task<IActionResult> PutFlight(int id, Flight flight)
         {
             if (id != flight.FlightId)
@@ -183,6 +205,7 @@ namespace Flights.API
         // POST: api/Flights
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost("create")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Flight>> PostFlight(Flight flight)
         {
             _context.Flights.Add(flight);
@@ -193,6 +216,7 @@ namespace Flights.API
 
         // DELETE: api/Flights/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteFlight(int id)
         {
             var flight = await _context.Flights.FindAsync(id);
@@ -207,6 +231,7 @@ namespace Flights.API
             return NoContent();
         }
 
+        [AllowAnonymous]
         private bool FlightExists(int id)
         {
             return _context.Flights.Any(e => e.FlightId == id);

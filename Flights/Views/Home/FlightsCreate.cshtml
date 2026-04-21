@@ -25,6 +25,10 @@
             data: jsonData,
             cache: false,
             processData: false,
+            beforeSend: function (xheader) {
+                var token = sessionStorage.getItem(tokenKey);
+                xheader.setRequestHeader("Authorization", "Bearer " + token);
+            },
             success: function (data) {
                 window.location.replace('/Home/Flights');
             }
